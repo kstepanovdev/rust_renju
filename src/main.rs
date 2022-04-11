@@ -6,26 +6,32 @@
 use eframe::NativeOptions;
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-
-use eframe::{egui::{CentralPanel, Grid, ImageButton, TextureHandle, ColorImage}, epi::App, run_native};
+use eframe::{
+    egui::{CentralPanel, Label, TopBottomPanel, Window},
+    epi::App,
+    run_native,
+};
 
 mod field;
-use field::Renju;
+use field::{Player, Renju};
 
 impl App for Renju {
+    fn setup(
+        &mut self,
+        _ctx: &eframe::egui::Context,
+        _frame: &eframe::epi::Frame,
+        _storage: Option<&dyn eframe::epi::Storage>,
+    ) {
+    }
+
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
         CentralPanel::default().show(ctx, |ui| {
-            let texture: &TextureHandle = &ui.ctx().load_texture("example", ColorImage::example());
-            let img_size = 20.0 * texture.size_vec2() / texture.size_vec2().y;
+            self.render_field(ui);
 
-            Grid::new("1").show(ui, |ui| {
-                for idx in 0..self.field.len() {
-                    ui.add(ImageButton::new(texture, img_size));
-                    if (idx + 1) % 15 == 0 {
-                        ui.end_row()
-                    }
-                }
-            })
+            match &self.winner {
+                Some(player) => render_popup(ctx, &player),
+                None => {}
+            }
         });
     }
 
@@ -34,6 +40,12 @@ impl App for Renju {
     }
 }
 
+fn render_popup(ctx: &eframe::egui::Context, player: &Player) {
+    Window::new("Winner has been found!").show(ctx, |ui| match player {
+        &Player::One => ui.add(Label::new("Player One has won")),
+        &Player::Two => ui.add(Label::new("Player Two has won")),
+    });
+}
 
 fn main() {
     let app = Renju::new();
