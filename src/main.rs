@@ -30,7 +30,7 @@ impl App for Renju {
             ui.add_space(10.);
             self.render_field(ui);
             if ui.add(Button::new("Start a new game")).clicked() {
-                self.reset_game();
+                *self = Renju::default();
             }
 
             match &self.winner {

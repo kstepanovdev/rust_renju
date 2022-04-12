@@ -13,6 +13,17 @@ pub enum Player {
     Two,
 }
 
+impl Default for Renju {
+    fn default() -> Self {
+        Self {
+            field: [Color32::TRANSPARENT; 225],
+            turn: Player::One,
+            winner: None,
+            enabled: true,
+        }
+    }
+}
+
 impl Renju {
     pub fn new() -> Self {
         Renju {
@@ -21,13 +32,6 @@ impl Renju {
             winner: None,
             enabled: true,
         }
-    }
-
-    pub fn reset_game(&mut self) {
-        self.field = [Color32::TRANSPARENT; 225];
-        self.turn = Player::One;
-        self.winner = None;
-        self.enabled = true;
     }
 
     pub fn render_field(&mut self, ui: &mut Ui) {
