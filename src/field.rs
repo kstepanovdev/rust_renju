@@ -21,6 +21,12 @@ impl Renju {
         }
     }
 
+    pub fn reset_game(&mut self) {
+        self.field = [Color32::TRANSPARENT; 225];
+        self.turn = Player::One;
+        self.winner = None;
+    }
+
     pub fn render_field(&mut self, ui: &mut Ui) {
         Grid::new("field").spacing([5.0, 5.0]).show(ui, |ui| {
             for idx in 0..self.field.len() {
