@@ -99,23 +99,17 @@ impl Renju {
     }
 
     fn horizontal_check(&mut self, win_color: Color32) {
-        let mut win_line = vec![];
-        let mut idx = 0;
-        while idx < self.field.len() {
-            let cell_color = self.field[idx];
-            if cell_color != win_color {
-                idx += 1;
-                win_line = vec![];
-                continue;
-            }
-            if win_line.len() == 0 {
-                win_line.push(idx);
-                idx += 1;
-                continue;
-            }
-
-            if (idx - win_line[win_line.len() - 1]) == 1 {
-                win_line.push(idx);
+        let rows = self.field.chunks(15);
+        for row in rows {
+            let mut win_line = vec![];
+            let mut idx = 0;
+            while idx < row.len() {
+                let cell_color = row[idx];
+                if cell_color == win_color {
+                    win_line.push(idx);
+                } else {
+                    win_line = vec![];
+                }
                 if win_line.len() >= 5 {
                     self.winner = Some(self.turn);
                     self.enabled = false;
