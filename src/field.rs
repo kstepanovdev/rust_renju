@@ -4,6 +4,7 @@ pub struct Renju {
     pub field: [Color32; 225],
     pub turn: Player,
     pub winner: Option<Player>,
+    pub enabled: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -18,6 +19,7 @@ impl Renju {
             field: [Color32::TRANSPARENT; 225],
             turn: Player::One,
             winner: None,
+            enabled: true,
         }
     }
 
@@ -25,10 +27,12 @@ impl Renju {
         self.field = [Color32::TRANSPARENT; 225];
         self.turn = Player::One;
         self.winner = None;
+        self.enabled = true;
     }
 
     pub fn render_field(&mut self, ui: &mut Ui) {
         Grid::new("field").spacing([5.0, 5.0]).show(ui, |ui| {
+            ui.set_enabled(self.enabled);
             for idx in 0..self.field.len() {
                 let texture: &TextureHandle = &ui
                     .ctx()
@@ -80,6 +84,7 @@ impl Renju {
                 win_line.push(i);
                 if win_line.len() >= 5 {
                     self.winner = Some(self.turn);
+                    self.enabled = false;
                     return;
                 }
                 i += shift;
@@ -109,6 +114,7 @@ impl Renju {
                 win_line.push(idx);
                 if win_line.len() >= 5 {
                     self.winner = Some(self.turn);
+                    self.enabled = false;
                     return;
                 }
                 idx += 1;
