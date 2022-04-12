@@ -3,11 +3,11 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] //Hide console window in release builds on Windows, this blocks stdout.
 
-use eframe::{NativeOptions, egui::Ui};
+use eframe::{egui::Ui, NativeOptions};
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
-    egui::{CentralPanel, Label, TopBottomPanel, Window, Layout, Button, menu},
+    egui::{menu, Button, CentralPanel, Label, Layout, TopBottomPanel, Window},
     epi::App,
     run_native,
 };
