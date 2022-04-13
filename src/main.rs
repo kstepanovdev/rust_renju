@@ -52,9 +52,9 @@ impl App for Renju {
 fn render_popup(ctx: &eframe::egui::Context, player: &Player) {
     Window::new("Winner has been found!")
         .anchor(Align2::CENTER_CENTER, vec2(0., 0.))
-        .show(ctx, |ui| match player {
-            &Player::One => ui.add(Label::new("Player One has won")),
-            &Player::Two => ui.add(Label::new("Player Two has won")),
+        .show(ctx, |ui| match *player {
+            Player::One => ui.add(Label::new("Player One has won")),
+            Player::Two => ui.add(Label::new("Player Two has won")),
         });
 }
 
