@@ -37,22 +37,22 @@ impl Renju {
     pub fn render_field(&mut self, ui: &mut Ui) {
         Grid::new("field").spacing([5.0, 5.0]).show(ui, |ui| {
             ui.set_enabled(self.enabled);
-            for idx in 0..self.field.len() {
+            for (idx, cell_color) in self.field.into_iter().enumerate() {
                 let texture: &TextureHandle = &ui
                     .ctx()
-                    .load_texture("example", ColorImage::new([80, 80], self.field[idx]));
+                    .load_texture("cell", ColorImage::new([80, 80], cell_color));
                 let img_size = 50.0 * texture.size_vec2() / texture.size_vec2().y;
 
                 let cell = ui.add(ImageButton::new(texture, img_size));
                 if cell.clicked() {
-                    match (&self.turn, &self.field[idx]) {
-                        (Player::One, &Color32::TRANSPARENT) => {
+                    match (&self.turn, cell_color) {
+                        (Player::One, Color32::TRANSPARENT) => {
                             let current_color = Color32::LIGHT_RED;
                             self.field[idx] = current_color;
                             self.winner_check(current_color);
                             self.turn = Player::Two;
                         }
-                        (Player::Two, &Color32::TRANSPARENT) => {
+                        (Player::Two, Color32::TRANSPARENT) => {
                             let current_color = Color32::LIGHT_BLUE;
                             self.field[idx] = current_color;
                             self.winner_check(current_color);

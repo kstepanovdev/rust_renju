@@ -37,7 +37,7 @@ impl App for Renju {
 
             match &self.winner {
                 Some(player) => {
-                    render_popup(ctx, &player);
+                    render_popup(ctx, player);
                 }
                 None => {}
             }
