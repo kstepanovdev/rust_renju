@@ -3,11 +3,11 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] //Hide console window in release builds on Windows, this blocks stdout.
 
-use eframe::{NativeOptions};
+use eframe::NativeOptions;
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
-    egui::{menu, Button, CentralPanel, Label, Layout, TopBottomPanel, Window, Direction},
+    egui::{menu, vec2, Align2, Button, CentralPanel, Label, Layout, TopBottomPanel, Window},
     epi::App,
     run_native,
 };
@@ -27,11 +27,13 @@ impl App for Renju {
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
         render_control_panel(ctx, frame);
         CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(10.);
-            self.render_field(ui);
-            if ui.add(Button::new("Start a new game")).clicked() {
-                *self = Renju::default();
-            }
+            ui.horizontal(|ui| {
+                ui.add_space(10.);
+                self.render_field(ui);
+                if ui.add(Button::new("Start a new game")).clicked() {
+                    *self = Renju::default();
+                }
+            });
 
             match &self.winner {
                 Some(player) => {
@@ -48,14 +50,12 @@ impl App for Renju {
 }
 
 fn render_popup(ctx: &eframe::egui::Context, player: &Player) {
-    Window::new("Winner has been found!").show(ctx, |ui| {
-        ui.with_layout(Layout::centered_and_justified(Direction::BottomUp), |ui| {
-            match player {
-                &Player::One => ui.add(Label::new("Player One has won")),
-                &Player::Two => ui.add(Label::new("Player Two has won")),
-            }
+    Window::new("Winner has been found!")
+        .anchor(Align2::CENTER_CENTER, vec2(0., 0.))
+        .show(ctx, |ui| match player {
+            &Player::One => ui.add(Label::new("Player One has won")),
+            &Player::Two => ui.add(Label::new("Player Two has won")),
         });
-    });
 }
 
 fn render_control_panel(ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
