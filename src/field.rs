@@ -40,7 +40,7 @@ impl Renju {
             for idx in 0..self.field.len() {
                 let texture: &TextureHandle = &ui
                     .ctx()
-                    .load_texture("example", ColorImage::new([100, 100], self.field[idx]));
+                    .load_texture("example", ColorImage::new([80, 80], self.field[idx]));
                 let img_size = 50.0 * texture.size_vec2() / texture.size_vec2().y;
 
                 let cell = ui.add(ImageButton::new(texture, img_size));

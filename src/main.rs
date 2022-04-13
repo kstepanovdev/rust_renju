@@ -3,11 +3,11 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] //Hide console window in release builds on Windows, this blocks stdout.
 
-use eframe::{egui::Ui, NativeOptions};
+use eframe::{NativeOptions};
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
-    egui::{menu, Button, CentralPanel, Label, Layout, TopBottomPanel, Window},
+    egui::{menu, Button, CentralPanel, Label, Layout, TopBottomPanel, Window, Direction},
     epi::App,
     run_native,
 };
@@ -48,9 +48,13 @@ impl App for Renju {
 }
 
 fn render_popup(ctx: &eframe::egui::Context, player: &Player) {
-    Window::new("Winner has been found!").show(ctx, |ui| match player {
-        &Player::One => ui.add(Label::new("Player One has won")),
-        &Player::Two => ui.add(Label::new("Player Two has won")),
+    Window::new("Winner has been found!").show(ctx, |ui| {
+        ui.with_layout(Layout::centered_and_justified(Direction::BottomUp), |ui| {
+            match player {
+                &Player::One => ui.add(Label::new("Player One has won")),
+                &Player::Two => ui.add(Label::new("Player Two has won")),
+            }
+        });
     });
 }
 
