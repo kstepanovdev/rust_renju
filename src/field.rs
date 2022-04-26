@@ -1,65 +1,113 @@
-use eframe::egui::{Color32, ColorImage, Grid, ImageButton, TextureHandle, Ui};
-
-pub struct Renju {
-    pub field: [Color32; 225],
-    pub turn: Player,
-    pub winner: Option<Player>,
-    pub enabled: bool,
+use std::{
+    io::Write,
+    net::TcpStream,
+    sync::mpsc::{Receiver, Sender},
+    thread,
+};
+#[derive(Serialize, Deserialize)]
+enum GameAction {
+    Connect(String),
+    Move(usize, String),
+    Reset,
 }
 
-#[derive(Clone, Copy)]
-pub enum Player {
-    One,
-    Two,
+use eframe::egui::{self, Color32, ColorImage, Grid, ImageButton, TextureHandle, Ui, Window};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ServerResponse {
+    Ok,
+    Fail,
+    Move(usize, usize),
+}
+
+pub struct Renju {
+    pub field: [usize; 225],
+    pub enabled: bool,
+    pub config: RenjuConfig,
+    pub stream: Option<TcpStream>,
+    pub rx: Option<Receiver<ServerResponse>>,
+    pub tx: Option<Sender<ServerResponse>>,
 }
 
 impl Default for Renju {
     fn default() -> Self {
+        let config: RenjuConfig = confy::load("renju").unwrap_or_default();
         Self {
-            field: [Color32::TRANSPARENT; 225],
-            turn: Player::One,
-            winner: None,
+            field: [0; 225],
             enabled: true,
+            config,
+            stream: None,
+            tx: None,
+            rx: None,
         }
     }
 }
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct RenjuConfig {
+    pub dark_mode: bool,
+    pub connection_ip: String,
+    pub username: String,
+}
+
 impl Renju {
     pub fn new() -> Self {
+        let config: RenjuConfig = confy::load("renju").unwrap_or_default();
         Renju {
-            field: [Color32::TRANSPARENT; 225],
-            turn: Player::One,
-            winner: None,
+            field: [0; 225],
             enabled: true,
+            config,
+            stream: None,
+            tx: None,
+            rx: None,
         }
     }
 
+    pub fn render_connection_panel(&mut self, ctx: &eframe::egui::Context) {
+        Window::new("Connection panel").show(ctx, |ui| {
+            ui.label("Enter game server's IP:");
+            let _ip_info_field = ui.text_edit_singleline(&mut self.config.connection_ip);
+            ui.label("Enter a username:");
+            let _username_field = ui.text_edit_singleline(&mut self.config.username);
+
+            if ui.input().key_pressed(egui::Key::Enter) {
+                match confy::store(
+                    "renju",
+                    RenjuConfig {
+                        dark_mode: self.config.dark_mode,
+                        connection_ip: self.config.connection_ip.clone(),
+                        username: self.config.username.clone(),
+                    },
+                ) {
+                    Ok(_) => tracing::error!("all green"),
+                    Err(e) => tracing::error!("Failed saving app state: {}", e),
+                }
+            }
+        });
+    }
+
     pub fn render_field(&mut self, ui: &mut Ui) {
+        let colors = vec![
+            Color32::TRANSPARENT,
+            Color32::LIGHT_RED,
+            Color32::LIGHT_BLUE,
+        ];
         Grid::new("field").spacing([5.0, 5.0]).show(ui, |ui| {
             ui.set_enabled(self.enabled);
+
             for (idx, cell_color) in self.field.into_iter().enumerate() {
                 let texture: &TextureHandle = &ui
                     .ctx()
-                    .load_texture("cell", ColorImage::new([80, 80], cell_color));
+                    .load_texture("cell", ColorImage::new([80, 80], colors[cell_color]));
                 let img_size = 50.0 * texture.size_vec2() / texture.size_vec2().y;
-
                 let cell = ui.add(ImageButton::new(texture, img_size));
+
                 if cell.clicked() {
-                    match (&self.turn, cell_color) {
-                        (Player::One, Color32::TRANSPARENT) => {
-                            let current_color = Color32::LIGHT_RED;
-                            self.field[idx] = current_color;
-                            self.winner_check(current_color);
-                            self.turn = Player::Two;
-                        }
-                        (Player::Two, Color32::TRANSPARENT) => {
-                            let current_color = Color32::LIGHT_BLUE;
-                            self.field[idx] = current_color;
-                            self.winner_check(current_color);
-                            self.turn = Player::One;
-                        }
-                        (_, _) => {}
-                    }
+                    let data =
+                        bincode::serialize(&GameAction::Move(idx, self.config.username.clone()))
+                            .unwrap();
+                    self.stream.as_mut().unwrap().write_all(&data).unwrap();
                 }
                 if (idx + 1) % 15 == 0 {
                     ui.end_row()
@@ -68,54 +116,21 @@ impl Renju {
         });
     }
 
-    fn winner_check(&mut self, win_color: Color32) {
-        self.horizontal_check(win_color);
-        [14, 15, 16].map(|shift| self.shift_check(win_color, shift));
-    }
-
-    fn shift_check(&mut self, win_color: Color32, shift: usize) {
-        let mut idx = 0;
-        let mut win_line = vec![];
-        while idx < self.field.len() {
-            if self.field[idx] != win_color {
-                idx += 1;
-                win_line = vec![];
-                continue;
-            }
-            win_line.push(idx);
-            let mut i = idx;
-            while i + shift < self.field.len() && self.field[i + shift] == win_color {
-                win_line.push(i);
-                if win_line.len() >= 5 {
-                    self.winner = Some(self.turn);
-                    self.enabled = false;
-                    return;
+    pub fn update_field(&mut self) {
+        let rx = self.rx.as_mut().unwrap();
+        match rx.try_recv() {
+            Ok(response) => match response {
+                ServerResponse::Ok => {
+                    tracing::warn!("ok rx side")
                 }
-                i += shift;
-            }
-            win_line = vec![];
-            idx += 1;
-        }
-    }
-
-    fn horizontal_check(&mut self, win_color: Color32) {
-        let rows = self.field.chunks(15);
-        for row in rows {
-            let mut win_line = vec![];
-            let mut idx = 0;
-            while idx < row.len() {
-                let cell_color = row[idx];
-                if cell_color == win_color {
-                    win_line.push(idx);
-                } else {
-                    win_line = vec![];
+                ServerResponse::Fail => {}
+                ServerResponse::Move(move_id, color) => {
+                    tracing::warn!("move_id: {}, color: {}", move_id, color);
+                    self.field[move_id] = color;
                 }
-                if win_line.len() >= 5 {
-                    self.winner = Some(self.turn);
-                    self.enabled = false;
-                    return;
-                }
-                idx += 1;
+            },
+            Err(e) => {
+                tracing::error!("{}", e);
             }
         }
     }
