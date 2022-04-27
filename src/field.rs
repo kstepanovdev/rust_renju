@@ -1,7 +1,7 @@
 use core::time;
 use std::{
     io::{BufReader, Read, Write},
-    net::TcpStream,
+    net::{IpAddr, TcpStream},
     sync::mpsc::{channel, Receiver, Sender},
     thread::{self, sleep},
 };
@@ -20,9 +20,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ServerResponse {
-    Ok,
-    Fail,
-    Move(usize, usize),
+    Ok(IpAddr),
+    Fail(String, IpAddr),
+    Move(usize, usize, Option<String>),
     Reset,
 }
 
@@ -34,6 +34,7 @@ pub struct Renju {
     pub stream: Option<TcpStream>,
     pub rx: Option<Receiver<ServerResponse>>,
     pub tx: Option<Sender<ServerResponse>>,
+    pub winner: Option<String>,
 }
 
 impl Default for Renju {
@@ -47,6 +48,7 @@ impl Default for Renju {
             stream: None,
             tx: None,
             rx: None,
+            winner: None,
         }
     }
 }
@@ -69,6 +71,7 @@ impl Renju {
             stream: None,
             tx: None,
             rx: None,
+            winner: None,
         }
     }
 
@@ -175,17 +178,27 @@ impl Renju {
         let rx = self.rx.as_mut().unwrap();
         match rx.try_recv() {
             Ok(response) => match response {
-                ServerResponse::Ok => {
+                ServerResponse::Ok(_) => {
                     tracing::warn!("ok rx side")
                 }
-                ServerResponse::Fail => {}
-                ServerResponse::Move(move_id, color) => {
+                ServerResponse::Fail(message, ip_addr) => {
+                    tracing::error!("message {:?}, addr: {:?}", message, ip_addr);
+                }
+                ServerResponse::Move(move_id, color, winner) => {
                     tracing::warn!("move_id: {}, color: {}", move_id, color);
                     self.field[move_id] = color;
+                    match winner {
+                        Some(name) => {
+                            self.winner = Some(name);
+                            self.enabled = false;
+                        }
+                        None => {}
+                    }
                 }
                 ServerResponse::Reset => {
                     self.field = [0; 225];
                     self.enabled = true;
+                    self.winner = None;
                 }
             },
             Err(e) => {

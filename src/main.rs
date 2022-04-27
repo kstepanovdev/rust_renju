@@ -10,7 +10,11 @@ use std::{
     thread,
 };
 
-use eframe::NativeOptions;
+use eframe::{
+    egui::{Label, Window},
+    emath::Align2,
+    NativeOptions,
+};
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
@@ -54,12 +58,12 @@ impl App for Renju {
                     }
                 });
 
-                //     match &self.winner {
-                //         Some(player) => {
-                //             render_popup(ctx, player);
-                //         }
-                //         None => {}
-                //     }
+                match &self.winner {
+                    Some(winner) => {
+                        render_popup(ctx, winner.clone());
+                    }
+                    None => {}
+                }
             });
         } else {
             self.render_connection_panel(ctx);
@@ -71,14 +75,13 @@ impl App for Renju {
     }
 }
 
-// fn render_popup(ctx: &eframe::egui::Context, player: &Player) {
-//     Window::new("Winner has been found!")
-//         .anchor(Align2::CENTER_CENTER, vec2(0., 0.))
-//         .show(ctx, |ui| match *player {
-//             Player::One => ui.add(Label::new("Player One has won")),
-//             Player::Two => ui.add(Label::new("Player Two has won")),
-//         });
-// }
+fn render_popup(ctx: &eframe::egui::Context, winner: String) {
+    Window::new("Winner has been found!")
+        // .anchor(Align2::CENTER_CENTER, (0., 0.))
+        .show(ctx, |ui| {
+            ui.add(Label::new(winner));
+        });
+}
 
 fn render_control_panel(ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
     TopBottomPanel::top("top_panel").show(ctx, |ui| {
