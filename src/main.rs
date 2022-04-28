@@ -3,16 +3,8 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] //Hide console window in release builds on Windows, this blocks stdout.
 
-use std::{
-    io::{BufReader, Read, Write},
-    net::TcpStream,
-    sync::mpsc::channel,
-    thread,
-};
-
 use eframe::{
     egui::{Label, Window},
-    emath::Align2,
     NativeOptions,
 };
 // When compiling natively:
@@ -25,7 +17,6 @@ use eframe::{
 
 mod field;
 use field::Renju;
-use field::ServerResponse;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,6 +36,8 @@ impl App for Renju {
     }
 
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
+        ctx.request_repaint();
+
         if self.connected {
             self.handle_game_action();
 
