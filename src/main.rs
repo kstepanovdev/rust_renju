@@ -41,7 +41,7 @@ impl App for Renju {
         if self.connected {
             self.handle_game_action();
 
-            render_control_panel(ctx, frame);
+            // render_control_panel(ctx, frame);
             CentralPanel::default().show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.add_space(10.);
