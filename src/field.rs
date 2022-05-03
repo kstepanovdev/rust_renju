@@ -16,7 +16,9 @@ use eframe::{
     egui::{self, Color32, ColorImage, Grid, ImageButton, TextureHandle, Ui, Window},
     emath::Align2,
 };
+use eframe::egui::{Button, TopBottomPanel};
 use serde::{Deserialize, Serialize};
+use crate::Layout;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ServerResponse {
@@ -205,5 +207,30 @@ impl Renju {
                 tracing::error!("{}", e);
             }
         }
+    }
+
+    pub fn render_control_panel(&mut self, ctx: &egui::Context, frame: &eframe::epi::Frame) {
+        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            ui.add_space(10.);
+            egui::menu::bar(ui, |ui| {
+                ui.with_layout(Layout::right_to_left(), |ui| {
+                    let close_btn = ui.add(Button::new("❌"));
+                    if close_btn.clicked() {
+                        frame.quit();
+                    }
+                    let theme_btn = ui.add(Button::new({
+                        if self.config.dark_mode {
+                            "🌞"
+                        } else {
+                            "🌙"
+                        }
+                    }));
+                    if theme_btn.clicked() {
+                        self.config.dark_mode = !self.config.dark_mode;
+                    }
+                });
+            });
+            ui.add_space(10.);
+        });
     }
 }

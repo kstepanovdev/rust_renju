@@ -10,7 +10,7 @@ use eframe::{
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
-    egui::{menu, Button, CentralPanel, Layout, TopBottomPanel},
+    egui::{menu, Button, CentralPanel, Layout, TopBottomPanel, Visuals},
     epi::App,
     run_native,
 };
@@ -27,28 +27,28 @@ enum GameAction {
 }
 
 impl App for Renju {
-    fn setup(
-        &mut self,
-        _ctx: &eframe::egui::Context,
-        _frame: &eframe::epi::Frame,
-        _storage: Option<&dyn eframe::epi::Storage>,
-    ) {
-    }
-
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
         ctx.request_repaint();
 
+        if self.config.dark_mode {
+            ctx.set_visuals(Visuals::dark());
+        } else {
+            ctx.set_visuals(Visuals::light());
+        }
+
         if self.connected {
             self.handle_game_action();
-
-            // render_control_panel(ctx, frame);
+            self.render_control_panel(ctx, frame);
             CentralPanel::default().show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.add_space(10.);
                     self.render_field(ui);
-                    if ui.add(Button::new("Start a new game")).clicked() {
-                        self.reset();
-                    }
+                    ui.vertical_centered(|ui| {
+                        ui.add_space(10.);
+                        if ui.add(Button::new("Start a new game")).clicked() {
+                            self.reset();
+                        }
+                    });
                 });
 
                 match &self.winner {
@@ -63,6 +63,14 @@ impl App for Renju {
         }
     }
 
+    fn setup(
+        &mut self,
+        _ctx: &eframe::egui::Context,
+        _frame: &eframe::epi::Frame,
+        _storage: Option<&dyn eframe::epi::Storage>,
+    ) {
+    }
+
     fn name(&self) -> &str {
         "Rust Renju"
     }
@@ -74,21 +82,6 @@ fn render_popup(ctx: &eframe::egui::Context, winner: String) {
         .show(ctx, |ui| {
             ui.add(Label::new(winner));
         });
-}
-
-fn render_control_panel(ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
-    TopBottomPanel::top("top_panel").show(ctx, |ui| {
-        ui.add_space(10.);
-        menu::bar(ui, |ui| {
-            ui.with_layout(Layout::right_to_left(), |ui| {
-                let close_btn = ui.add(Button::new("❌"));
-                if close_btn.clicked() {
-                    frame.quit();
-                }
-            });
-        });
-        ui.add_space(10.);
-    });
 }
 
 fn main() {
