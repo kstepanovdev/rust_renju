@@ -10,7 +10,7 @@ use eframe::{
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 use eframe::{
-    egui::{menu, Button, CentralPanel, Layout, TopBottomPanel, Visuals},
+    egui::{Button, CentralPanel, Layout, Visuals},
     epi::App,
     run_native,
 };
